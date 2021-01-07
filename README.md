@@ -1,6 +1,7 @@
 # Digital Image Analysis and Processing
 In this simple project I had to apply Image Processing techniques and algorithms
 to achieve a set of tasks on this image:  
+
 <img src="res/test.jpg" width =""/> <br />
 
 These are the tasks I had to achieve:  
@@ -168,9 +169,7 @@ And if we turn down the opacity of the filling color:
 
 We can see now it covers the original ellipse perfectly. Same with blue and red ellipses:
 
-<img src="out/blue_circle_transparent.png" width ="300"/>
-
-<img src="out/red_circle_transparent.png" width ="300"/>
+<img src="out/blue_circle_transparent.png" width ="300"/> <img src="out/red_circle_transparent.png" width ="300"/>
 
 The green ellipse is centered at (1503, 532) and has a major length of 308
 and minor length of 294.  
