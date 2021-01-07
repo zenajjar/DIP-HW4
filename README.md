@@ -97,7 +97,7 @@ And I got the following result:
 Hough Transformation is fairly accurate but as you can see it covers extra
 area outside the circle. And it was even worse with the blue circle:
 
-<img src="out/blue_circle_hough.bmp" width ="500"/> <br />
+<img src="out/blue_circle_hough.png" width ="500"/> <br />
 
 I wasn't happy with the results and after some inspection
 I found out that the green circle has a height of around 590 pixels
@@ -168,9 +168,45 @@ And if we turn down the opacity of the filling color:
 
 We can see now it covers the original ellipse perfectly. Same with blue and red ellipses:
 
-<img src="out/blue_circle_transparent.png" width ="300"/>
+<img src="out/blue_circle_transparent.png" width ="300"/> <img src="out/red_circle_transparent.png" width ="300"/>
 
-<img src="out/red_circle_transparent.png" width ="300"/>
+Here's the resulting image:  
+<img src="out/result_circles.png" width =""/>
+
+
+# Line Detection
+For line detection I used Hough Transformation as well but, it required
+different filtration method.  
+Here I first use the same color slicing method then perform the closing operation instead
+because here noise isn't as big of an issue and we need to conserve the original shape of lines
+as much as possible. So, I perform dilation first with radius 4 then erosion with radius 3
+without any blurring to get this:
+
+<img src="out/green_filtered_lines.png" width =""/>
+
+Now I use the `HoughLinesP` method provided in OpenCV and pick the longest line and draw it.  
+```python
+lines = cv2.HoughLinesP(filtered_image,
+                        rho=HOUGH_LINES_RHO,
+                        theta=HOUGH_LINES_THETA,
+                        threshold=HOUGH_LINES_THRESH,
+                        minLineLength=HOUGH_LINES_MIN_LINE,
+                        maxLineGap=HOUGH_LINES_LINE_GAP)
+```
+I faced an issue with the blue line because it's really close to a blue circle
+so it was extending and overlapping the circle thinking it was part of it so,
+I used methods mentioned in the circles section to black out all of the RGB circles
+from the image before trying to detect the lines so I got this result:
+
+<img src="out/lines_image.png" width =""/>
+
+And that solved the issue. Here's the resulting image:  
+
+<img src="out/result_lines.png" width =""/>
+
+# Conclusion
+Adding the two resulting images we get this final image:
+<img src="out/result.png" width =""/>
 
 The green ellipse is centered at (1503, 532) and has a major length of 308
 and minor length of 294.  
@@ -178,10 +214,35 @@ The blue ellipse is centered at (2048, 414) and has a major length of 226
 and minor length of 209.  
 The red ellipse is actually a circle and is centered at (600, 640) and has a radius of 213.  
 
-Here's the resulting image:  
-<img src="out/result_circles.png" width =""/>
+The green, blue and red lines are 1923, 637.19 and 2116 pixels long respectively.
 
+I tried to keep my code as general as possible so it would work on any
+generally similar image to the one I was working on. These constants at the beginning of my code
+can be fine tuned to fit any image:
 
+```python
+BLUR_DIMENSION = 9
+COLOR_DISTANCE = 150
+CIRCLE_EROSION_DIMENSION = 3
+CIRCLE_EROSION_ITERATIONS = 1
+CIRCLE_DILATION_DIMENSION = 5
+CIRCLE_DILATION_ITERATIONS = 3
+HOUGH_CIRCLE_DP = 1
+HOUGH_CIRCLE_MIN_DIST = 100
+HOUGH_CIRCLE_CANNY_THRESH = 20
+HOUGH_CIRCLE_ACCUMULATOR_THRESH = 80
+COLUMN_WIDTH = 20
+CIRCLE_THICKNESS = 6
 
-
-.
+LINE_DILATION_DIMENSION = 4
+LINE_DILATION_ITERATIONS = 1
+LINE_EROSION_DIMENSION = 3
+LINE_EROSION_ITERATIONS = 1
+HOUGH_LINES_RHO = 10
+HOUGH_LINES_THETA = np.pi / 180
+HOUGH_LINES_THRESH = 100
+HOUGH_LINES_MIN_LINE = 200
+HOUGH_LINES_LINE_GAP = 60
+LINE_SHIFT = 0
+LINE_THICKNESS = 6
+```

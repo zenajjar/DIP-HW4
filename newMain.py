@@ -6,6 +6,7 @@ GREEN = (0, 255, 0)
 RED = (0, 0, 255)
 YELLOW = (0, 255, 255)
 MAGENTA = (255, 0, 255)
+CYAN = (255, 255, 0)
 
 colors_names = {
     BLACK: 'black',
@@ -13,24 +14,27 @@ colors_names = {
     GREEN: 'green',
     RED: 'red',
     YELLOW: 'yellow',
-    MAGENTA: 'magenta'
+    MAGENTA: 'magenta',
+    CYAN: 'cyan'
 }
 
 BLUR_DIMENSION = 9
 COLOR_DISTANCE = 150
-EROSION_DIMENSION = 3
-EROSION_ITERATIONS = 1
-DILATION_DIMENSION = 5
-DILATION_ITERATIONS = 3
-
+CIRCLE_EROSION_DIMENSION = 3
+CIRCLE_EROSION_ITERATIONS = 1
+CIRCLE_DILATION_DIMENSION = 5
+CIRCLE_DILATION_ITERATIONS = 3
 HOUGH_CIRCLE_DP = 1
 HOUGH_CIRCLE_MIN_DIST = 100
 HOUGH_CIRCLE_CANNY_THRESH = 20
 HOUGH_CIRCLE_ACCUMULATOR_THRESH = 80
 COLUMN_WIDTH = 20
-
 CIRCLE_THICKNESS = 6
 
+LINE_DILATION_DIMENSION = 4
+LINE_DILATION_ITERATIONS = 1
+LINE_EROSION_DIMENSION = 3
+LINE_EROSION_ITERATIONS = 1
 HOUGH_LINES_RHO = 10
 HOUGH_LINES_THETA = np.pi / 180
 HOUGH_LINES_THRESH = 100
@@ -83,9 +87,9 @@ def get_circles(image):
 def filter_color(image, color):
     color_image = get_color(image, color)
     save_image(color_image, f'{colors_names[color]}_sliced')
-    color_image = erode(color_image, EROSION_DIMENSION, EROSION_ITERATIONS)
+    color_image = erode(color_image, CIRCLE_EROSION_DIMENSION, CIRCLE_EROSION_ITERATIONS)
     save_image(color_image, f'{colors_names[color]}_eroded')
-    color_image = dilate(color_image, DILATION_DIMENSION, DILATION_ITERATIONS)
+    color_image = dilate(color_image, CIRCLE_DILATION_DIMENSION, CIRCLE_DILATION_ITERATIONS)
     save_image(color_image, f'{colors_names[color]}_dilated')
 
     return color_image
@@ -138,7 +142,10 @@ def find_ellipse(image, circle, color):
     save_image(segment, f'{colors_names[color]}_ellipse_segment')
 
     center = radius
-    diff = (DILATION_DIMENSION * DILATION_ITERATIONS - EROSION_DIMENSION * EROSION_ITERATIONS + CIRCLE_THICKNESS) // 2
+    diff = (CIRCLE_DILATION_DIMENSION * CIRCLE_DILATION_ITERATIONS
+            - CIRCLE_EROSION_DIMENSION * CIRCLE_EROSION_ITERATIONS
+            + CIRCLE_THICKNESS) // 2
+
     left_border = find_first_in_x_direction(segment, (center, center), -1) - diff
     right_border = find_first_in_x_direction(segment, (center, center), 1) + diff
     top_border = find_first_in_y_direction(segment, (center, center), -1) - diff
@@ -196,15 +203,12 @@ def draw_ellipse(image, ellipse, fill_color):
 
 
 def fill_longest_line(image, line_color, fill_color, output_image):
-    # filtered_image = filter_color(image, line_color)
     filtered_image = image
     filtered_image = get_color(filtered_image, line_color)
-    filtered_image = dilate(filtered_image, 4, 1)
-    filtered_image = erode(filtered_image, 3, 1)
-    # filtered_image = cv2.Canny(filtered_image, 0, 500)
-    # filtered_image = cv2.blur(filtered_image, (5, 5))
 
-    cv2.imwrite(f'{colors_names[line_color]}_lines_image.png', filtered_image)
+    filtered_image = dilate(filtered_image, LINE_DILATION_DIMENSION, LINE_DILATION_ITERATIONS)
+    filtered_image = erode(filtered_image, LINE_EROSION_DIMENSION, LINE_EROSION_ITERATIONS)
+    save_image(filtered_image, f'{colors_names[line_color]}_filtered_lines')
 
     lines = cv2.HoughLinesP(filtered_image,
                             rho=HOUGH_LINES_RHO,
@@ -214,7 +218,7 @@ def fill_longest_line(image, line_color, fill_color, output_image):
                             maxLineGap=HOUGH_LINES_LINE_GAP)
 
     longest_line = get_longest_line(lines)
-    print(f'longest {colors_names[line_color]} is {round(find_length(longest_line), 2)} pixels long')
+    print(f'longest {colors_names[line_color]} line is {round(find_length(longest_line), 2)} pixels long')
     draw_line(output_image, longest_line, fill_color)
 
 
@@ -240,9 +244,6 @@ def draw_line(image, line, fill_color):
 original_image = cv2.imread('res/test.jpg')
 output = original_image.copy()
 lines_image = original_image.copy()
-
-# filtered_image = filter_color(original_image, GREEN)
-# exit()
 
 fill_largest_circle(original_image, BLUE, BLUE, output)
 fill_largest_circle(original_image, GREEN, GREEN, output)
